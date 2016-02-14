@@ -194,7 +194,7 @@ public class MainFrame extends javax.swing.JFrame {
                 int maxCol = sheet.getColumns();
                 int maxRow = sheet.getRows();
                 String[][] allMassiv = getAndCreateMassiv(maxCol, maxRow, sheet);
-                //System.out.println(allMassiv[8][8]);
+                System.out.println(allMassiv[8][8]);
                 workbook.close();             
             } catch (IOException ex) {
                 Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, ex);
@@ -203,7 +203,7 @@ public class MainFrame extends javax.swing.JFrame {
             }           
         }
         Open.setEnabled(false);
-        Go.setEnabled(true);
+        //Go.setEnabled(true);
     }//GEN-LAST:event_OpenActionPerformed
    
     public String[][] getAndCreateMassiv(int col, int row, Sheet sheet) {
