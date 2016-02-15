@@ -7,6 +7,9 @@ package my.jexcel;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.NumberFormat;
+import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFileChooser;
@@ -15,6 +18,10 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 import jxl.*;
 import jxl.read.biff.BiffException;
+import jxl.write.Label;
+import jxl.write.WritableSheet;
+import jxl.write.WritableWorkbook;
+import jxl.write.WriteException;
 
 /**
  *
@@ -39,6 +46,7 @@ public class MainFrame extends javax.swing.JFrame {
         }
     }
     private File workingDirectory = new File(System.getProperty("user.dir"));
+    private String[][] allMassiv;
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -49,7 +57,10 @@ public class MainFrame extends javax.swing.JFrame {
     private void initComponents() {
 
         jFileChooser1 = new javax.swing.JFileChooser();
+        buttonGroup2 = new javax.swing.ButtonGroup();
         jPanel1 = new javax.swing.JPanel();
+        jRadioButton1 = new javax.swing.JRadioButton();
+        jRadioButton2 = new javax.swing.JRadioButton();
         jPanel2 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
         jLabel2 = new javax.swing.JLabel();
@@ -68,20 +79,36 @@ public class MainFrame extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("ExcelApp");
-        setLocation(new java.awt.Point(400, 300));
+        setLocation(new java.awt.Point(100, 100));
         setResizable(false);
 
         jPanel1.setBorder(javax.swing.BorderFactory.createTitledBorder("Параметры"));
+
+        buttonGroup2.add(jRadioButton1);
+        jRadioButton1.setSelected(true);
+        jRadioButton1.setText("Uizm = X");
+
+        buttonGroup2.add(jRadioButton2);
+        jRadioButton2.setText("Uizm = (X - 0,036)/150,3");
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jRadioButton1)
+                .addGap(18, 18, 18)
+                .addComponent(jRadioButton2)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 32, Short.MAX_VALUE)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jRadioButton1)
+                    .addComponent(jRadioButton2))
+                .addGap(0, 9, Short.MAX_VALUE))
         );
 
         jPanel2.setBorder(javax.swing.BorderFactory.createTitledBorder("Исходные данные"));
@@ -126,6 +153,11 @@ public class MainFrame extends javax.swing.JFrame {
 
         Go.setText("Рассчитать");
         Go.setEnabled(false);
+        Go.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                GoActionPerformed(evt);
+            }
+        });
 
         File.setText("Файл");
 
@@ -179,10 +211,11 @@ public class MainFrame extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    //Выход из приложения
     private void ExitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ExitActionPerformed
         System.exit(0);
     }//GEN-LAST:event_ExitActionPerformed
-
+    //Открываем файл, считываем первый лист, заносим все содержимое в общий массив
     private void OpenActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_OpenActionPerformed
         int returnVal = jFileChooser1.showOpenDialog(this);
         if (returnVal == JFileChooser.APPROVE_OPTION) {
@@ -193,8 +226,7 @@ public class MainFrame extends javax.swing.JFrame {
                 Sheet sheet = workbook.getSheet(0);
                 int maxCol = sheet.getColumns();
                 int maxRow = sheet.getRows();
-                String[][] allMassiv = getAndCreateMassiv(maxCol, maxRow, sheet);
-                System.out.println(allMassiv[8][8]);
+                allMassiv = getAndCreateMassiv(maxCol, maxRow, sheet);
                 workbook.close();             
             } catch (IOException ex) {
                 Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, ex);
@@ -203,9 +235,80 @@ public class MainFrame extends javax.swing.JFrame {
             }           
         }
         Open.setEnabled(false);
-        //Go.setEnabled(true);
+        Go.setEnabled(true);
     }//GEN-LAST:event_OpenActionPerformed
-   
+    
+    // Рассчитываем средние значения для каждого пина
+    private void GoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_GoActionPerformed
+        int h = 0;
+        int kk = 0;
+        int obwH = 0;
+        double SumValue; //сумма по значениям
+        String valueAv; //среднее арифметическое
+        ArrayList<String> pins = new ArrayList<String>();
+        ArrayList<String> values = new ArrayList<String>();
+        ArrayList<Double> xValue = new ArrayList<Double>();
+        do  {
+            String[][] arrayOnePin = new String[10][12];
+            int j;      
+            int i = 0;
+            int ii = obwH;
+            do {
+                for (j = 0; j < 10; j++) {
+                    arrayOnePin[j][i] = allMassiv[j][ii];
+                }
+                i++;
+                ii++;
+                h++;        
+            } while (allMassiv[0][ii]=="");
+            
+    //=======================================******========================================        
+        /* здесь можно вводить код для различных манипуляций с данными одного пина (создание массивов, 
+       арифметические операции и т.д.)*/
+            System.out.println(arrayOnePin[0][0]);//для проверки!
+            pins.add(arrayOnePin[0][0]); //массив пинов
+            SumValue = 0;
+            for (j = 0; j < (h-1); j++) {
+                NumberFormat nf = NumberFormat.getInstance();
+                try {
+                    double xValueDouble  = nf.parse(arrayOnePin[9][j]).doubleValue();
+                    xValue.add(xValueDouble);
+                    SumValue = SumValue + xValueDouble;
+                } catch (ParseException ex) {
+                    Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+            valueAv = String.valueOf(SumValue/(h-1));
+            values.add(valueAv); //массив средних значений для каждого пина
+            System.out.println(valueAv); //для проверки
+    //=====================================******=====================================        
+            
+            obwH = obwH + h;
+            h = 0;
+            arrayOnePin = null;
+            xValue.clear();
+            kk++;
+            if ("end".equals(allMassiv[0][obwH])) break; 
+        } while (allMassiv[0][obwH]!= "end");
+        try {
+            //Экпорт в MS Excel
+            WritableWorkbook workbookOut = Workbook.createWorkbook(new File("output.xls"));
+            WritableSheet sheetOut = workbookOut.createSheet("First Sheet", 0);        
+            for (int i = 0; i < kk; i++){
+                Label cell1 = new Label(0, i, pins.get(i));
+                Label cell2 = new Label(1, i, values.get(i));
+                sheetOut.addCell(cell1);
+                sheetOut.addCell(cell2);
+            }
+            workbookOut.write(); 
+            workbookOut.close();
+        } catch (IOException ex) {
+            Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (WriteException ex) {
+            Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, ex);
+        }  
+    }//GEN-LAST:event_GoActionPerformed
+    //Метод создания общего массива и экспорта его в таблицу на форме приложения
     public String[][] getAndCreateMassiv(int col, int row, Sheet sheet) {
         String[][] allArrayT = new String[row][col];
         String[][] allArray = new String[col][row];
@@ -216,11 +319,9 @@ public class MainFrame extends javax.swing.JFrame {
             }    
         }
         jTable2.setModel(new DefaultTableModel(allArrayT, new String [] {
-        null, null, null, null, null, null, null, null, null, null}) );
+        "pin", "name", "gender", "type", "place" ,"smoke", "DStart", "DDate", "time", "X"}) );
         return allArray; 
-    }    
-   
-    
+    }     
     /**
      * @param args the command line arguments
      */
@@ -261,12 +362,15 @@ public class MainFrame extends javax.swing.JFrame {
     private javax.swing.JMenu File;
     private javax.swing.JButton Go;
     private javax.swing.JMenuItem Open;
+    private javax.swing.ButtonGroup buttonGroup2;
     private javax.swing.JFileChooser jFileChooser1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
+    private javax.swing.JRadioButton jRadioButton1;
+    private javax.swing.JRadioButton jRadioButton2;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JPopupMenu.Separator jSeparator1;
     private javax.swing.JTable jTable2;
